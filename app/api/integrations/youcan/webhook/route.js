@@ -1,11 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SECRET_KEY
-);
-
 // 🔐 Verify YouCan signature
 function isValidSignature(payload, signature, secret) {
     const expected = crypto
@@ -21,6 +16,10 @@ function isValidSignature(payload, signature, secret) {
 
 export async function POST(req) {
     try {
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SECRET_KEY
+        );
         const signature = req.headers.get("x-youcan-signature");
 
         const body = await req.json();

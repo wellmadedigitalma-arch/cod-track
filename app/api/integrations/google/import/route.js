@@ -1,14 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 
-// 🔐 Supabase init (safe JS version)
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SECRET_KEY;
+// 🔐 Supabase init (lazy loaded per request)
+function getSupabase() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SECRET_KEY;
 
-if (!url || !key) {
-    throw new Error("Missing Supabase environment variables");
+    if (!url || !key) {
+        throw new Error("Missing Supabase environment variables");
+    }
+
+    return createClient(url, key);
 }
-
-const supabase = createClient(url, key);
 
 // 📥 Fetch Google Sheet
 async function fetchSheet(sheetId, sheetName, apiKey) {
@@ -136,6 +138,7 @@ export async function POST(req) {
         console.log(`📝 Inserting ${leadsWithTenant.length} leads for tenant ${tenantId}`);
 
         // 💾 Insert into Supabase
+        const supabase = getSupabase();
         const { data, error } = await supabase
             .from("leads")
             .insert(leadsWithTenant)

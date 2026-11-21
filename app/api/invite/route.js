@@ -3,13 +3,12 @@ import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SECRET_KEY
-);
-
 export async function POST(req) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SECRET_KEY
+    );
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
       console.error("Missing RESEND_API_KEY");

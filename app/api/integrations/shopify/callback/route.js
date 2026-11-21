@@ -1,9 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SECRET_KEY
-);
+function getSupabase() {
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SECRET_KEY
+    );
+}
 
 export async function GET(req) {
     const url = new URL(req.url);
@@ -35,6 +37,7 @@ export async function GET(req) {
     }
 
     // store connection
+    const supabase = getSupabase();
     await supabase.from("integration_connections").insert({
         tenant_id: "TEMP", // replace with real tenant logic
         provider: "shopify",
