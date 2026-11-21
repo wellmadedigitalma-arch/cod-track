@@ -31,30 +31,16 @@ import {
     ArrowUpDown
 } from "lucide-react";
 
-type Tenant = {
-    id: string;
-    name: string;
-    plan: string;
-    subscription_ends_at: string;
-    is_active: boolean;
-    user_count?: number;
-    usage_percentage?: number;
-    last_active?: string;
-};
-
-type SortField = 'name' | 'plan' | 'subscription_ends_at' | 'is_active';
-type SortDirection = 'asc' | 'desc';
-
 export default function AdminTenants() {
-    const [tenants, setTenants] = useState < Tenant[] > ([]);
-    const [filteredTenants, setFilteredTenants] = useState < Tenant[] > ([]);
+    const [tenants, setTenants] = useState([]);
+    const [filteredTenants, setFilteredTenants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState < "all" | "active" | "disabled" | "expiring" > ("all");
-    const [planFilter, setPlanFilter] = useState < string > ("all");
-    const [sortField, setSortField] = useState < SortField > ("name");
-    const [sortDirection, setSortDirection] = useState < SortDirection > ("asc");
-    const [selectedTenant, setSelectedTenant] = useState < string | null > (null);
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [planFilter, setPlanFilter] = useState("all");
+    const [sortField, setSortField] = useState("name");
+    const [sortDirection, setSortDirection] = useState("asc");
+    const [selectedTenant, setSelectedTenant] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
 
@@ -126,7 +112,7 @@ export default function AdminTenants() {
         setFilteredTenants(filtered);
     }, [tenants, searchTerm, statusFilter, planFilter, sortField, sortDirection]);
 
-    const handleSort = (field: SortField) => {
+    const handleSort = (field) => {
         if (sortField === field) {
             setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
         } else {
@@ -135,7 +121,7 @@ export default function AdminTenants() {
         }
     };
 
-    const getPlanColor = (plan: string) => {
+    const getPlanColor = (plan) => {
         switch (plan?.toLowerCase()) {
             case 'enterprise': return 'from-green-600 to-green-800';
             case 'business': return 'from-green-500 to-green-700';
@@ -144,7 +130,7 @@ export default function AdminTenants() {
         }
     };
 
-    const getStatusBadge = (isActive: boolean, endDate: string) => {
+    const getStatusBadge = (isActive, endDate) => {
         const now = new Date();
         const end = new Date(endDate);
         const thirtyDaysFromNow = new Date();
@@ -301,7 +287,7 @@ export default function AdminTenants() {
                                     key={status}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => setStatusFilter(status as any)}
+                                    onClick={() => setStatusFilter(status)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === status
                                             ? "bg-green-600 text-white shadow-md"
                                             : "bg-green-50 text-green-700 hover:bg-green-100"
@@ -402,7 +388,7 @@ export default function AdminTenants() {
                                                         </div>
                                                         <div>
                                                             <p className="font-semibold text-gray-900">{tenant.name}</p>
-                                                            <p className="text-xs text-gray-500">Last active: {new Date(tenant.last_active!).toLocaleDateString()}</p>
+                                                            <p className="text-xs text-gray-500">Last active: {new Date(tenant.last_active).toLocaleDateString()}</p>
                                                         </div>
                                                     </div>
                                                 </td>
