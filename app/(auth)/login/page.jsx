@@ -329,6 +329,8 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
+            console.log("Supabase URL in browser:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
             // ────────────────────────────────────────────────────
             // STEP 1: Check super_admins table FIRST
             // ────────────────────────────────────────────────────
