@@ -97,7 +97,7 @@ const COLORS = {
 export default function DashboardLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { canAccess, profile: permProfile, loading: permLoading } = usePermissions();
+    const { canAccess, isSuperAdmin, profile: permProfile, loading: permLoading } = usePermissions();
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -130,7 +130,7 @@ export default function DashboardLayout({ children }) {
                         .from("tenants").select("*").eq("id", profileData.tenant_id).single();
                     setTenant(tenantData);
 
-                    if (tenantData?.plan === "starter") {
+                    if (tenantData?.plan === "starter" && !isSuperAdmin) {
                         const trialEndDate = new Date(tenantData.created_at);
                         trialEndDate.setDate(trialEndDate.getDate() + 7);
                         if (new Date() > trialEndDate) {
@@ -219,6 +219,10 @@ export default function DashboardLayout({ children }) {
         { name: "Simulations", href: "/simulations", icon: BarChart3, permission: "dashboard", group: "analytics" },
         { name: "Team", href: "/team", icon: Users2, permission: "team", group: "manage" },
         { name: "Integrations", href: "/integrations", icon: Puzzle, permission: "integrations", group: "manage" },
+        ...(isSuperAdmin ? [
+            { name: "Global Analytics", href: "/admin/analytics", icon: Crown, permission: "dashboard", group: "admin" },
+            { name: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard, permission: "dashboard", group: "admin" },
+        ] : []),
     ];
 
     const navItems = allNavItems.filter((item) => canAccess(item.permission));
@@ -227,6 +231,7 @@ export default function DashboardLayout({ children }) {
         { key: "main", label: "Operations" },
         { key: "analytics", label: "Analytics" },
         { key: "manage", label: "Manage" },
+        ...(isSuperAdmin ? [{ key: "admin", label: "Super Admin" }] : []),
     ];
 
     if (accessBlocked && !loading) {

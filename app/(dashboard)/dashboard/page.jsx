@@ -12,6 +12,7 @@ import {
     X, Sparkles, Shield, Calendar, Rocket, Star,
     Filter, ChevronRight, Download, ChevronDown
 } from "lucide-react";
+import { usePermissions } from "@/lib/hooks/usePermissions";
 import {
     Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Area, ComposedChart, BarChart, Bar, Cell, PieChart as RechartsPie,
@@ -21,9 +22,9 @@ import {
 /* ================================================================
    ACCOUNT STATUS BANNER (unchanged)
 ================================================================ */
-function AccountStatusBanner({ tenant }) {
+function AccountStatusBanner({ tenant, isSuperAdmin }) {
     const [dismissed, setDismissed] = useState(false);
-    if (!tenant || dismissed) return null;
+    if (!tenant || dismissed || isSuperAdmin) return null;
     const now = new Date();
     const isDisabled = tenant.plan === "disabled";
     const subEnd = tenant.subscription_ends_at ? new Date(tenant.subscription_ends_at) : null;
@@ -104,6 +105,7 @@ const TIME_RANGES = [
 ================================================================ */
 export default function AnalyticsDashboard() {
     const router = useRouter();
+    const { isSuperAdmin } = usePermissions();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [tenant, setTenant] = useState(null);
@@ -259,7 +261,7 @@ export default function AnalyticsDashboard() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
             <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
-                <AccountStatusBanner tenant={tenant} />
+                <AccountStatusBanner tenant={tenant} isSuperAdmin={isSuperAdmin} />
 
                 {/* HEADER */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
