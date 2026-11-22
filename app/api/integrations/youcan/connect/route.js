@@ -1,24 +1,30 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req) {
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenant_id");
+
     const clientId = process.env.YOUCAN_CLIENT_ID;
     const redirectUri = process.env.YOUCAN_REDIRECT_URI;
 
     if (!clientId || !redirectUri) {
-        return NextResponse.json(
-            { error: "Missing YouCan env variables" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Missing YouCan env variables" }, { status: 500 });
+    }
+    if (!tenantId) {
+        return NextResponse.json({ error: "Missing tenant_id" }, { status: 400 });
     }
 
-    const scope = "orders.read products.read";
+    // Encode tenant_id in state param so the callback can retrieve it
+    const state = Buffer.from(JSON.stringify({ tenantId })).toString("base64url");
 
-    const url =
-        `https://api.youcan.shop/oauth/authorize` +
-        `?client_id=${clientId}` +
-        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&response_type=code` +
-        `&scope=${scope}`;
+    const url = new URL("https://seller-area.youcan.shop/admin/oauth/authorize");
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("state", state);
+    // YouCan requires scope as repeated array params: scope[]=...
+    url.searchParams.append("scope[]", "read-orders");
+    url.searchParams.append("scope[]", "read-products");
 
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url.toString());
 }

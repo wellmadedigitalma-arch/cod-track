@@ -30,7 +30,7 @@ const AVAILABLE_INTEGRATIONS = [
         bgColor: "#f0fdf4",
         active: true,
         features: ["Automatic order sync", "Real-time inventory updates", "Customer data import"],
-        type: "credentials",
+        type: "oauth",
     },
     {
         slug: "shopify",
@@ -265,11 +265,32 @@ function IntegrationsContent() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [shopifyShop, setShopifyShop] = useState("");
     const [sheetForm, setSheetForm] = useState({ source_name: "", sheet_id: "", sheet_name: "Sheet1", start_line: 2 });
-    const [youcanForm, setYoucanForm] = useState({ client_id: "", client_secret: "", store_url: "" });
-    const [showYoucanSecret, setShowYoucanSecret] = useState(false);
     const [autoImportTimers, setAutoImportTimers] = useState({});
 
-    useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        setMounted(true);
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const success = params.get("success");
+            const error = params.get("error");
+            if (success === "youcan_connected") {
+                toast("YouCan store connected successfully via OAuth!", "success");
+            } else if (error === "youcan_denied") {
+                toast("YouCan authorization was cancelled or denied.", "error");
+            } else if (error === "youcan_token_failed") {
+                toast("Failed to exchange YouCan authorization token.", "error");
+            } else if (error === "youcan_save_failed") {
+                toast("Failed to save YouCan integration connection.", "error");
+            } else if (error === "invalid_state") {
+                toast("Invalid OAuth state. Please try connecting again.", "error");
+            } else if (error) {
+                toast(`Integration error: ${error}`, "error");
+            }
+            if (success || error) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    }, [toast]);
 
     const fetchConnections = useCallback(async (silent = false) => {
         try {
@@ -318,9 +339,7 @@ function IntegrationsContent() {
     const handleSelectIntegration = (integration) => {
         setSelectedIntegration(integration);
         setSheetForm({ source_name: "", sheet_id: "", sheet_name: "Sheet1", start_line: 2 });
-        setYoucanForm({ client_id: "", client_secret: "", store_url: "" });
         setShopifyShop("");
-        setShowYoucanSecret(false);
         setError(null);
         setShowPanel(true);
     };
@@ -329,6 +348,11 @@ function IntegrationsContent() {
         if (!shop) return toast("Please enter your Shopify store URL", "error");
         const cleanShop = shop.replace(/https?:\/\//, "").replace(/\.myshopify\.com.*/, "").replace(/\/.*/, "").trim();
         window.location.href = `/api/integrations/shopify/connect?shop=${cleanShop}.myshopify.com`;
+    };
+
+    const connectYouCan = () => {
+        if (!profile?.tenant_id) return toast("Tenant profile not loaded yet. Please wait a moment and try again.", "error");
+        window.location.href = `/api/integrations/youcan/connect?tenant_id=${profile.tenant_id}`;
     };
 
     const handleCreateIntegration = async () => {
@@ -342,9 +366,6 @@ function IntegrationsContent() {
             if (selectedIntegration.slug === "google_sheets") {
                 if (!sheetForm.sheet_id) throw new Error("Sheet ID is required");
                 insertData.config = { ...sheetForm, auto_import_enabled: false, auto_import_interval: 30 };
-            } else if (selectedIntegration.slug === "youcan") {
-                insertData.credentials = { client_id: youcanForm.client_id, client_secret: youcanForm.client_secret, store_url: youcanForm.store_url };
-                insertData.config = { type: "manual_youcan", store_url: youcanForm.store_url };
             }
             await supabase.from("integration_connections").insert(insertData);
             toast(`${selectedIntegration.name} connected!`);
@@ -526,20 +547,22 @@ function IntegrationsContent() {
 
                         {selectedIntegration.slug === "youcan" && (
                             <div className="space-y-5">
-                                <div className="space-y-4">
-                                    {[{ l: "Store URL", v: youcanForm.store_url, k: "store_url", t: "url", p: "https://your-store.youcan.shop" },
-                                    { l: "Client ID", v: youcanForm.client_id, k: "client_id", t: "text", p: "Enter your Client ID" },
-                                    { l: "Client Secret", v: youcanForm.client_secret, k: "client_secret", t: showYoucanSecret ? "text" : "password", p: "Enter your Client Secret", secret: true }
-                                    ].map(f => (
-                                        <div key={f.k}><label className="block text-xs font-semibold text-gray-700 mb-2 uppercase">{f.l}</label>
-                                            <div className="relative">
-                                                <input type={f.t} placeholder={f.p} value={f.v} onChange={e => setYoucanForm(p => ({ ...p, [f.k]: e.target.value }))} className="w-full px-4 py-3.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-emerald-400" />
-                                                {f.secret && <button type="button" onClick={() => setShowYoucanSecret(!showYoucanSecret)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showYoucanSecret ? <EyeOff size={18} /> : <Eye size={18} />}</button>}
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+                                    <div className="flex items-center gap-2 text-emerald-800 font-semibold mb-1">
+                                        <Info size={18} className="text-emerald-600" />
+                                        <span>OAuth 2.0 Authorization</span>
+                                    </div>
+                                    <p className="text-sm text-emerald-700">
+                                        Connect your YouCan store with one click. You will be redirected to the YouCan Seller Area to authorize CODTrack to sync orders and products.
+                                    </p>
                                 </div>
-                                <button onClick={handleCreateIntegration} disabled={loading} className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold disabled:opacity-50 shadow-lg shadow-green-200">{loading ? <Loader2 size={18} className="animate-spin" /> : <><Link size={18} />Connect YouCan Store</>}</button>
+                                <button
+                                    onClick={connectYouCan}
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow-lg shadow-green-200 hover:shadow-xl transition-all cursor-pointer"
+                                >
+                                    <ExternalLink size={18} />
+                                    Connect YouCan Store
+                                </button>
                             </div>
                         )}
 
