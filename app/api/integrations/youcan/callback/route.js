@@ -7,7 +7,9 @@ export async function GET(req) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const reqUrl = new URL(req.url);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || reqUrl.origin;
+    const redirectUri = process.env.YOUCAN_REDIRECT_URI || `${reqUrl.origin}/api/integrations/youcan/callback`;
 
     if (error || !code) {
         return NextResponse.redirect(`${siteUrl}/integrations?error=youcan_denied`);
@@ -36,7 +38,7 @@ export async function GET(req) {
                 grant_type: "authorization_code",
                 client_id: process.env.YOUCAN_CLIENT_ID,
                 client_secret: process.env.YOUCAN_CLIENT_SECRET,
-                redirect_uri: process.env.YOUCAN_REDIRECT_URI,
+                redirect_uri: redirectUri,
                 code,
             }),
         });
