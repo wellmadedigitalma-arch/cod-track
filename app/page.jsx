@@ -410,8 +410,46 @@ export default function CRMLanding() {
           .hero-btns { flex-direction: column; align-items: stretch; }
           .hero-btns button, .hero-btns a { width: 100%; text-align: center; }
           .nav-links { display: none !important; }
+          .nav-actions .btn-outline, .nav-actions .btn-primary { display: none !important; }
           .footer-grid { grid-template-columns: 1fr 1fr !important; }
           .mobile-menu-btn { display: block !important; }
+          .hero-dashboard-card { padding: 20px !important; }
+          .hero-metrics { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .hero-metric { padding: 14px 8px !important; }
+          .hero-badge-float { display: none !important; }
+          .feature-preview-card,
+          .preview-card { padding: 24px !important; height: auto !important; min-height: 320px; }
+          .team-grid > .card-white { height: auto !important; min-height: 320px; }
+          .pl-grid, .team-grid { gap: 32px !important; }
+          .mobile-nav-dropdown {
+            position: absolute;
+            top: 64px;
+            right: 5%;
+            left: 5%;
+            display: grid;
+            gap: 4px;
+            padding: 10px;
+            border: 1px solid #d4edde;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.98);
+            box-shadow: 0 16px 48px rgba(0,168,68,0.16);
+          }
+          .mobile-nav-dropdown a {
+            padding: 12px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+          }
+        }
+        @media (max-width: 480px) {
+          .hero-title { font-size: 2rem; }
+          .section-title { font-size: 1.85rem; }
+          .stats-grid { grid-template-columns: 1fr !important; }
+          .footer-grid { grid-template-columns: 1fr !important; }
+          .hero-metrics { grid-template-columns: 1fr 1fr !important; }
+          .cta-section { border-radius: 20px; }
+          .cta-section button { width: 100%; justify-content: center; }
+          .cta-section a { width: 100%; }
+          .integration-logo { padding: 14px 10px; }
         }
       `}</style>
 
@@ -435,7 +473,7 @@ export default function CRMLanding() {
                     <Link href="/billing" className="nav-link">الأسعار</Link>
                     <a href="#testimonials" className="nav-link">التجار</a>
                 </div>
-                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <div className="nav-actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                     <Link href="/login" style={{ textDecoration: "none" }}>
                         <button className="btn-outline" style={{ padding: "10px 24px", fontSize: "0.95rem" }}>تسجيل الدخول</button>
                     </Link>
@@ -447,6 +485,16 @@ export default function CRMLanding() {
                     </button>
                 </div>
             </nav>
+            {mobileMenuOpen && (
+                <div className="mobile-nav-dropdown" style={{ zIndex: 99 }}>
+                    <a href="#features" className="nav-link" onClick={() => setMobileMenuOpen(false)}>المميزات</a>
+                    <a href="#integrations" className="nav-link" onClick={() => setMobileMenuOpen(false)}>التكاملات</a>
+                    <Link href="/billing" className="nav-link" onClick={() => setMobileMenuOpen(false)}>الأسعار</Link>
+                    <a href="#testimonials" className="nav-link" onClick={() => setMobileMenuOpen(false)}>التجار</a>
+                    <Link href="/login" className="nav-link" onClick={() => setMobileMenuOpen(false)}>تسجيل الدخول</Link>
+                    <Link href="/register" className="nav-link" onClick={() => setMobileMenuOpen(false)}>ابدأ مجاناً</Link>
+                </div>
+            )}
 
             {/* ═══════════════ HERO ═══════════════ */}
             <section ref={heroRef} className="grid-bg" style={{
@@ -488,9 +536,9 @@ export default function CRMLanding() {
 
                 {/* Hero visual - icon-based dashboard mockup */}
                 <div className={`float fade-in ${heroInView ? "visible" : ""}`} style={{ position: "relative", zIndex: 1, marginTop: "64px", width: "100%", maxWidth: "1000px", transition: "opacity 1s ease 0.4s" }}>
-                    <div className="card-white" style={{ padding: "48px", background: "linear-gradient(135deg, #f8fdf9 0%, #ffffff 100%)", borderRadius: "24px", boxShadow: "0 24px 64px rgba(0,168,68,0.12), 0 4px 16px rgba(0,0,0,0.06)" }}>
+                    <div className="card-white hero-dashboard-card" style={{ padding: "48px", background: "linear-gradient(135deg, #f8fdf9 0%, #ffffff 100%)", borderRadius: "24px", boxShadow: "0 24px 64px rgba(0,168,68,0.12), 0 4px 16px rgba(0,0,0,0.06)" }}>
                         {/* Mock dashboard */}
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
+                        <div className="hero-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
                             {[
                                 { icon: Package, label: "الطلبات", value: "247", color: "#00a844" },
                                 { icon: DollarSign, label: "المبيعات", value: "12,450", color: "#00c853" },
@@ -499,7 +547,7 @@ export default function CRMLanding() {
                             ].map((item, i) => {
                                 const ItemIcon = item.icon;
                                 return (
-                                    <div key={i} style={{ background: "#fff", border: "1.5px solid #e6f4ec", borderRadius: "16px", padding: "20px", textAlign: "center" }}>
+                                    <div key={i} className="hero-metric" style={{ background: "#fff", border: "1.5px solid #e6f4ec", borderRadius: "16px", padding: "20px", textAlign: "center" }}>
                                         <ItemIcon size={28} color={item.color} style={{ marginBottom: "8px" }} />
                                         <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#0f1f14" }}>{item.value}</div>
                                         <div style={{ fontSize: "0.85rem", color: "#7da88a", marginTop: "4px" }}>{item.label}</div>
@@ -679,7 +727,7 @@ export default function CRMLanding() {
                     </div>
 
                     {/* Icon-based simulation preview */}
-                    <div className="card-white" style={{ padding: "48px", background: "linear-gradient(135deg, #f8fdf9 0%, #e8f8ef 100%)", height: "420px", display: "flex", flexDirection: "column", gap: "24px", justifyContent: "center" }}>
+                    <div className="card-white preview-card" style={{ padding: "48px", background: "linear-gradient(135deg, #f8fdf9 0%, #e8f8ef 100%)", height: "420px", display: "flex", flexDirection: "column", gap: "24px", justifyContent: "center" }}>
                         <div style={{ textAlign: "center" }}>
                             <Target size={48} color="#00a844" style={{ marginBottom: "12px" }} />
                             <div style={{ fontSize: "2rem", fontWeight: 900, color: "#00843d" }}>نقطة التعادل</div>
@@ -711,7 +759,7 @@ export default function CRMLanding() {
             <section style={{ padding: "100px 5%", background: "#fff" }}>
                 <div className="team-grid" style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
                     {/* Icon-based team visualization */}
-                    <div className="card-white" style={{ padding: "48px", background: "linear-gradient(135deg, #f0faf4 0%, #ffffff 100%)", height: "400px", display: "flex", flexDirection: "column", gap: "20px", justifyContent: "center" }}>
+                    <div className="card-white preview-card" style={{ padding: "48px", background: "linear-gradient(135deg, #f0faf4 0%, #ffffff 100%)", height: "400px", display: "flex", flexDirection: "column", gap: "20px", justifyContent: "center" }}>
                         <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
                             {["أ", "م", "س", "ك"].map((letter, idx) => (
                                 <div key={idx} className="avatar" style={{ width: idx === 0 ? 64 : 48, height: idx === 0 ? 64 : 48, fontSize: idx === 0 ? "1.5rem" : "1.1rem", opacity: idx === 0 ? 1 : 0.7 }}>

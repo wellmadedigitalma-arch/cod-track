@@ -491,6 +491,19 @@ export default function DashboardLayout({ children }) {
                     color: ${COLORS.rose};
                     background: ${COLORS.roseLight};
                 }
+
+                .dashboard-main {
+                    padding: 24px;
+                }
+
+                @media (max-width: 767px) {
+                    .dashboard-main {
+                        padding: 16px 12px;
+                    }
+                    .dropdown-custom {
+                        max-width: calc(100vw - 24px);
+                    }
+                }
             `}</style>
 
             {/* Mobile overlay */}
@@ -855,7 +868,7 @@ export default function DashboardLayout({ children }) {
                 </header>
 
                 {/* MAIN CONTENT */}
-                <main className="flex-1 p-6">
+                <main className="dashboard-main flex-1">
                     {accessBlocked ? (
                         <div style={{ maxWidth: 560, margin: "60px auto" }}>
                             <div style={{
