@@ -129,17 +129,29 @@ export default function AnalyticsDashboard() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { setError("Please sign in"); setLoading(false); return; }
 
-            const { data: p } = await supabase.from("user_profiles").select("id,tenant_id,role,full_name").eq("id", user.id).single();
-            if (!p) { setError("No profile"); setLoading(false); return; }
+            const { data: p } = await supabase.from("user_profiles").select("id,tenant_id,role,full_name").eq("id", user.id).maybeSingle();
+            if (!p && !isSuperAdmin) { setError("No profile found"); setLoading(false); return; }
 
-            const { data: t } = await supabase.from("tenants").select("*").eq("id", p.tenant_id).single();
-            if (t) setTenant(t);
+            const tenantId = p?.tenant_id;
 
-            const { data: l } = await supabase.from("leads").select("*").eq("tenant_id", p.tenant_id).order("date", { ascending: false });
-            setLeads(l || []);
+            if (tenantId) {
+                const { data: t } = await supabase.from("tenants").select("*").eq("id", tenantId).maybeSingle();
+                if (t) setTenant(t);
 
-            const { data: a } = await supabase.from("user_profiles").select("id,full_name,role").eq("tenant_id", p.tenant_id);
-            setAgents(a || []);
+                const { data: l } = await supabase.from("leads").select("*").eq("tenant_id", tenantId).order("date", { ascending: false });
+                setLeads(l || []);
+
+                const { data: a } = await supabase.from("user_profiles").select("id,full_name,role").eq("tenant_id", tenantId);
+                setAgents(a || []);
+            } else if (isSuperAdmin) {
+                // If super admin has no tenant, load all leads or first tenant
+                const { data: t } = await supabase.from("tenants").select("*").limit(1).maybeSingle();
+                if (t) {
+                    setTenant(t);
+                    const { data: l } = await supabase.from("leads").select("*").eq("tenant_id", t.id).order("date", { ascending: false });
+                    setLeads(l || []);
+                }
+            }
 
             setLastRefreshed(new Date());
         } catch (err) { setError(err.message); }

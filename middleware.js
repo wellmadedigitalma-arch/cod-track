@@ -87,25 +87,25 @@ export async function middleware(req) {
         // ────────────────────────────────────────────────────────
         if (pathname.startsWith("/admin")) {
             try {
-                const adminCheckUrl = new URL("/api/admin/check", req.url);
+                // Check if user is in super_admins table
+                const { data: superAdmin } = await supabase
+                    .from("super_admins")
+                    .select("id, role")
+                    .eq("email", user.email)
+                    .maybeSingle();
 
-                const checkRes = await fetch(adminCheckUrl, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-user-id": user.id,
-                        "x-admin-key": process.env.ADMIN_SECRET_KEY || "super_secret_123",
-                    },
-                });
+                if (!superAdmin) {
+                    // Check user_profiles for workspace admin
+                    const { data: profile } = await supabase
+                        .from("user_profiles")
+                        .select("role")
+                        .eq("id", user.id)
+                        .maybeSingle();
 
-                if (!checkRes.ok) {
-                    return NextResponse.redirect(new URL("/dashboard", req.url));
-                }
-
-                const checkData = await checkRes.json();
-
-                if (!checkData.isAdmin) {
-                    return NextResponse.redirect(new URL("/dashboard", req.url));
+                    const isWorkspaceAdmin = profile?.role === "owner" || profile?.role === "admin";
+                    if (!isWorkspaceAdmin) {
+                        return NextResponse.redirect(new URL("/dashboard", req.url));
+                    }
                 }
             } catch (err) {
                 console.error("Middleware admin check error:", err);
