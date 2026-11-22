@@ -61,34 +61,66 @@ export async function GET(req) {
     );
 
     // Look up the integration row for YouCan
-    const { data: integration } = await supabase
+    let { data: integration } = await supabase
         .from("integrations")
         .select("id")
         .eq("slug", "youcan")
         .maybeSingle();
 
-    // Store / update the connection with OAuth tokens
-    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
-    const { error: upsertError } = await supabase
-        .from("integration_connections")
-        .upsert(
-            {
-                tenant_id: tenantId,
-                integration_id: integration?.id,
-                status: "active",
-                credentials: {
-                    access_token: tokenData.access_token,
-                    refresh_token: tokenData.refresh_token,
-                    expires_at: expiresAt,
-                },
-                config: { type: "oauth_youcan" },
-            },
-            { onConflict: "tenant_id,integration_id" }
-        );
+    let integrationId = integration?.id;
+    if (!integrationId) {
+        const { data: newIntegration } = await supabase
+            .from("integrations")
+            .insert({ name: "YouCan Store", slug: "youcan" })
+            .select("id")
+            .maybeSingle();
+        integrationId = newIntegration?.id;
+    }
 
-    if (upsertError) {
-        console.error("YouCan upsert error:", upsertError);
-        return NextResponse.redirect(`${siteUrl}/integrations?error=youcan_save_failed`);
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+    const connectionPayload = {
+        status: "active",
+        credentials: {
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            expires_at: expiresAt,
+        },
+        config: { type: "oauth_youcan" },
+    };
+
+    // Check if a connection already exists for this tenant & integration
+    let query = supabase
+        .from("integration_connections")
+        .select("id")
+        .eq("tenant_id", tenantId);
+
+    if (integrationId) {
+        query = query.eq("integration_id", integrationId);
+    }
+
+    const { data: existingConn } = await query.maybeSingle();
+
+    let saveError = null;
+    if (existingConn?.id) {
+        const { error } = await supabase
+            .from("integration_connections")
+            .update(connectionPayload)
+            .eq("id", existingConn.id);
+        saveError = error;
+    } else {
+        const { error } = await supabase
+            .from("integration_connections")
+            .insert({
+                tenant_id: tenantId,
+                integration_id: integrationId || null,
+                ...connectionPayload,
+            });
+        saveError = error;
+    }
+
+    if (saveError) {
+        console.error("YouCan save connection error:", saveError);
+        return NextResponse.redirect(`${siteUrl}/integrations?error=${encodeURIComponent(saveError.message || "youcan_save_failed")}`);
     }
 
     return NextResponse.redirect(`${siteUrl}/integrations?success=youcan_connected`);
