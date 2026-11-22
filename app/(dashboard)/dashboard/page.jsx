@@ -174,12 +174,14 @@ export default function AnalyticsDashboard() {
     const analytics = useMemo(() => {
         const now = new Date();
         const selectedRange = TIME_RANGES.find(r => r.value === timeRange);
+        const safeLeads = Array.isArray(leads) ? leads : [];
+        const safeAgents = Array.isArray(agents) ? agents : [];
 
         // Filter leads by time range
-        let filteredLeads = leads;
+        let filteredLeads = safeLeads;
         if (selectedRange?.days) {
             const cutoff = new Date(now.getTime() - selectedRange.days * 24 * 60 * 60 * 1000);
-            filteredLeads = leads.filter(l => l.date && new Date(l.date) >= cutoff);
+            filteredLeads = safeLeads.filter(l => l.date && !isNaN(new Date(l.date).getTime()) && new Date(l.date) >= cutoff);
         }
 
         const total = filteredLeads.length;
@@ -195,10 +197,10 @@ export default function AnalyticsDashboard() {
         // Build chart data based on time range
         const chartData = [];
         const days = selectedRange?.days || 30;
-        const actualDays = selectedRange?.days ? Math.min(days, 365) : Math.min(
-            leads.length > 0 ? Math.ceil((now - new Date(leads[leads.length - 1]?.date || now)) / (1000 * 60 * 60 * 24)) : 30,
+        const actualDays = Math.max(1, selectedRange?.days ? Math.min(days, 365) : Math.min(
+            safeLeads.length > 0 ? Math.ceil((now - new Date(safeLeads[safeLeads.length - 1]?.date || now)) / (1000 * 60 * 60 * 24)) : 30,
             365
-        );
+        ));
 
         for (let i = actualDays - 1; i >= 0; i--) {
             const date = new Date(now);
@@ -224,7 +226,7 @@ export default function AnalyticsDashboard() {
 
             const prevDate = new Date(currentDate); prevDate.setDate(prevDate.getDate() - actualDays);
             const prevStr = prevDate.toISOString().split("T")[0];
-            const prevDayLeads = leads.filter(l => l.date && new Date(l.date).toISOString().split("T")[0] === prevStr);
+            const prevDayLeads = safeLeads.filter(l => l.date && new Date(l.date).toISOString().split("T")[0] === prevStr);
 
             comparisonData.push({
                 date: currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -250,9 +252,9 @@ export default function AnalyticsDashboard() {
         const sources = Object.entries(srcMap).map(([n, v]) => ({ name: n, value: v }));
         const SRC_COLORS = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4"];
 
-        const team = agents.filter(a => a.role !== "owner").map(a => { const al = filteredLeads.filter(l => l.assigned_to === a.id), c = al.filter(l => l.status === "confirmed" || l.status === "delivered").length; return { name: a.full_name, role: a.role, leads: al.length, confirmed: c, conversion: al.length > 0 ? Number(((c / al.length) * 100).toFixed(0)) : 0, revenue: al.filter(l => l.status === "delivered").reduce((s, l) => s + (Number(l.amount) || 0), 0) }; }).sort((a, b) => b.leads - a.leads);
+        const team = safeAgents.filter(a => a?.role !== "owner").map(a => { const al = filteredLeads.filter(l => l.assigned_to === a.id), c = al.filter(l => l.status === "confirmed" || l.status === "delivered").length; return { name: a?.full_name || "Agent", role: a?.role || "agent", leads: al.length, confirmed: c, conversion: al.length > 0 ? Number(((c / al.length) * 100).toFixed(0)) : 0, revenue: al.filter(l => l.status === "delivered").reduce((s, l) => s + (Number(l.amount) || 0), 0) }; }).sort((a, b) => b.leads - a.leads);
 
-        const recent = filteredLeads.slice(0, 10).map(l => ({ ...l, agentName: agents.find(a => a.id === l.assigned_to)?.full_name || "Unassigned", timeAgo: getTimeAgo(l.date) }));
+        const recent = filteredLeads.slice(0, 10).map(l => ({ ...l, agentName: safeAgents.find(a => a.id === l.assigned_to)?.full_name || "Unassigned", timeAgo: getTimeAgo(l.date) }));
 
         return { total, pending, confirmed, delivered, cancelled, revenue, convRate, avgOrder, delRate, chartData, comparisonData, pipeline, topProds, sources, SRC_COLORS, team, recent, actualDays };
     }, [leads, agents, timeRange]);
